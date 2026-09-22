@@ -27,8 +27,8 @@
 - [x] Both containers build successfully.
 - [x] Both containers start successfully.
 - [x] Backend resolves to its Docker network address.
-- [X] Frontend can successfully communicate with backend.
-- [X] `http://localhost:5173/api/metrics` currently works end-to-end.
+- [ ] Frontend can successfully communicate with backend.
+- [ ] `http://localhost:5173/api/metrics` currently works end-to-end.
 
 ## Known Issue
 
