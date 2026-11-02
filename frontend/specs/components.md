@@ -260,7 +260,8 @@ The app has no router. Use hash-based view switching inside `App`:
 | `""`, `"#/"`, or anything unrecognized | Home dashboard (Features 1 and 2) |
 | `"#/comparison"` | `ComparisonPage` |
 
-Listen to `hashchange`. Add a `DashboardNav` to the header:
+Listen to `hashchange`. Render a new `DashboardNav` in `App`, directly above
+`DashboardHeader`, so it is shared by both views. `DashboardHeader` gets no new props.
 
 | Prop | Type |
 |---|---|
