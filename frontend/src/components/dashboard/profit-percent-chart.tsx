@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { ChartCardSkeleton } from './chart-card-skeleton'
 import { type MonthlyDataPoint } from '@/lib/financial-types'
 import {
   LineChart,
@@ -49,17 +49,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 
 export function ProfitPercentChart({ data, loading }: ProfitPercentChartProps) {
   if (loading) {
-    return (
-      <Card className="border-border/60">
-        <CardHeader className="pb-4">
-          <Skeleton className="h-5 w-52" />
-          <Skeleton className="h-3 w-64 mt-1" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[280px] w-full rounded-lg" />
-        </CardContent>
-      </Card>
-    )
+    return <ChartCardSkeleton />
   }
 
   const hasData = data.some((d) => d.profitPercent !== 0)
@@ -67,7 +57,9 @@ export function ProfitPercentChart({ data, loading }: ProfitPercentChartProps) {
   return (
     <Card className="border-border/60">
       <CardHeader className="pb-4">
-        <CardTitle className="text-base font-semibold">Profit Margin %</CardTitle>
+        <CardTitle className="text-base font-semibold">
+          <h2>Profit Margin %</h2>
+        </CardTitle>
         <CardDescription>Monthly profit as a percentage of total income</CardDescription>
       </CardHeader>
       <CardContent>
@@ -77,7 +69,12 @@ export function ProfitPercentChart({ data, loading }: ProfitPercentChartProps) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+              title="Profit Margin % line chart"
+              desc={`Monthly profit margin from ${data[0]?.month} to ${data[data.length - 1]?.month}. Use the arrow keys to read each month's value.`}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" strokeOpacity={0.6} />
               <XAxis
                 dataKey="month"

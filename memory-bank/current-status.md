@@ -8,13 +8,18 @@
 - Direct backend metrics check succeeded: `GET http://localhost:8000/api/metrics` returned HTTP 200.
 - Frontend root check succeeded: `GET http://localhost:5173/` returned HTTP 200.
 - The backend process responded to an internal request at `127.0.0.1:8000/health`.
-- Backend route tests and frontend validation scripts exist, but host-side execution was not fully verified because the host Python environment lacked FastAPI, the host frontend environment lacked usable TypeScript dependencies, and host `npm install` encountered permissions in `frontend/node_modules`.
+- On 2026-11-02 and 2026-11-03, all three runtime paths succeeded: direct backend, frontend container to `backend:8000`, and the Vite proxy `localhost:5173/api/metrics` (HTTP 200, 360 movements).
+- Host-side frontend checks pass from `frontend/`: `npm run build` (0 warnings), `npm run lint`, and `npm test` (9 tests).
+- Backend tests pass inside the container: `docker compose exec -T backend python -m pytest -q` (15 passed, 1 pre-existing Starlette warning). The host Python environment still lacks FastAPI.
+- The full pre-merge procedure is `skills/dashboard-merge-check/SKILL.md`. See [progress.md](progress.md) for the 2026-11-03 skills session.
 
 ## Known Gaps and Issues
 
-### Docker proxy path is broken
+### Docker proxy path: working now, root cause of the earlier failure unknown
 
-The frontend container resolves the Compose hostname `backend` to its Docker network address, but requests to `http://backend:8000` timed out. As a result, `http://localhost:5173/api/metrics` also timed out even though direct access to `localhost:8000/api/metrics` worked. This is documented in [verification.md](../verification.md) and is the highest-priority runtime issue.
+During Phase 1, requests from the frontend container to `http://backend:8000` timed out, so `localhost:5173/api/metrics` hung. On 2026-11-02 and 2026-11-03 the same paths succeeded, with no repository change to Compose or Vite config. The original cause was never identified, so keep checking all three paths after any restart. [verification.md](../verification.md) still records the Phase 1 failure.
+
+After a Codespace restart, `docker compose up -d` can fail with `container with given ID already exists`. Running `docker compose down && docker compose up -d` recovers it.
 
 ### Startup readiness is not modeled
 
@@ -22,7 +27,7 @@ The frontend container resolves the Compose hostname `backend` to its Docker net
 
 ### Test coverage is uneven
 
-[backend/tests/test_routes.py](../backend/tests/test_routes.py) covers API contracts and deterministic mock behavior. [frontend/src/lib/financial-utils.test.ts](../frontend/src/lib/financial-utils.test.ts) covers utility calculations, but there are no frontend component or API integration tests for the fetch, loading, and error path in [frontend/src/App.tsx](../frontend/src/App.tsx).
+[backend/tests/test_routes.py](../backend/tests/test_routes.py) covers API contracts and deterministic mock behavior. [frontend/src/lib/financial-utils.test.ts](../frontend/src/lib/financial-utils.test.ts) covers utility calculations. [frontend/src/App.test.tsx](../frontend/src/App.test.tsx), added 2026-11-03, covers the pending, success, HTTP error, and network failure states of the dashboard fetch (jsdom environment). Charts are not rendered meaningfully in jsdom; chart accessibility is checked against the live app by the merge-check skill.
 
 ### Date label and data range can diverge
 
@@ -30,8 +35,8 @@ The dashboard displays a static `2024 - Full Year` label in [frontend/src/App.ts
 
 ## Next Priorities
 
-1. Diagnose and fix or explicitly isolate the Docker frontend-to-backend connectivity failure, then re-run direct, container-to-container, and Vite-proxied HTTP checks.
-2. Add readiness healthchecks if the Compose stack is expected to self-report healthy startup.
-3. Add frontend integration coverage for the dashboard fetch and error states.
-4. Decide whether dependency reproducibility requires strict frontend lockfile installation and pinned backend requirements.
-5. Make the displayed dashboard period reflect the actual configured or returned data range.
+1. Add readiness healthchecks if the Compose stack is expected to self-report healthy startup.
+2. Make the displayed dashboard period reflect the actual configured or returned data range.
+3. Decide whether dependency reproducibility requires strict frontend lockfile installation and pinned backend requirements.
+4. Translate or localize the Spanish error banner. It is currently marked `lang="es"` on an English page.
+5. Update [verification.md](../verification.md) to record that the proxy paths now pass, with dates.

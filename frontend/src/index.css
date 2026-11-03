@@ -115,6 +115,23 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* WCAG 2.4.7 / 1.4.11: the default ring/50 outline measured ~2.8:1 on cards; the solid ring is 4.7:1. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* WCAG 2.3: honor reduced-motion for CSS animations (skeleton pulse, hover transitions). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 
