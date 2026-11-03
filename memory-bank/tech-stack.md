@@ -7,6 +7,8 @@
 - **Frontend build/dev tooling:** Vite 8, the React Vite plugin, and the Tailwind CSS Vite plugin, configured in [frontend/vite.config.ts](../frontend/vite.config.ts).
 - **Frontend UI/data dependencies:** Recharts for charts, lucide-react for icons, and class-variance-authority, clsx, and tailwind-merge for styling utilities. These are listed in [frontend/package.json](../frontend/package.json).
 - **Frontend quality tooling:** ESLint, TypeScript, and Vitest. Scripts are defined in [frontend/package.json](../frontend/package.json).
+- **Frontend test environment:** `jsdom` (devDependency) for component tests, enabled per file with `// @vitest-environment jsdom`. No `@testing-library`: tests use React 19 `act` and `createRoot`.
+- **Code splitting:** both chart components are lazy-loaded in `App.tsx` (`React.lazy` + `Suspense`, with `ChartCardSkeleton` as the fallback). Eager JS is about 228 kB.
 
 ## Backend
 
@@ -25,3 +27,9 @@
 ## Configuration Notes
 
 The frontend has a committed [frontend/package-lock.json](../frontend/package-lock.json), but the Dockerfile currently runs `npm install`. Backend requirements are not version-pinned in [backend/requirements.txt](../backend/requirements.txt). The backend enables permissive CORS in [backend/app/main.py](../backend/app/main.py), and its default Docker command enables debugpy and Uvicorn reload for development.
+
+## Agent Skills
+
+- **Community skills** are installed with `npx skills add` into [.agents/skills/](../.agents/skills/) and pinned in [skills-lock.json](../skills-lock.json): `accessibility`, `vercel-react-best-practices`, `vitest`. Restore them with `npx skills experimental_install`.
+- **Internal skill:** [skills/dashboard-merge-check/](../skills/dashboard-merge-check/SKILL.md), the pre-merge QA gate.
+- **Claude Code** loads all of them through symlinks in `.claude/skills/`.
