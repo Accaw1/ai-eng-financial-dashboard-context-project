@@ -5,6 +5,11 @@ frontend/src/index.css (the app renders <main className="dark">) and computes
 ratios for the pairs below. Add any new foreground/background pair you introduce.
 
 Usage: python3 contrast.py path/to/frontend/src/index.css   (exit 1 on failure)
+
+A background written "token/NN@base" means a Tailwind opacity class such as
+bg-destructive/10 drawn over `base`: Tailwind v4 emits
+color-mix(in oklab, var(--token) NN%, transparent), which the browser
+alpha-composites over the base color in gamma-encoded sRGB.
 """
 import math
 import re
@@ -12,6 +17,7 @@ import sys
 
 # (foreground token, background token, minimum ratio, where it is used)
 PAIRS = [
+    ("destructive-foreground", "destructive/10@background", 4.5, "error banner text (App.tsx)"),
     ("muted-foreground", "card", 4.5, "card labels, descriptions, chart ticks"),
     ("muted-foreground", "background", 4.5, "header subtitle"),
     ("foreground", "card", 4.5, "KPI values, chart titles"),
@@ -45,6 +51,28 @@ def luminance(rgb):
     return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
 
 
+def encode(x):  # linear -> gamma-encoded sRGB
+    return 12.92 * x if x <= 0.0031308 else 1.055 * x ** (1 / 2.4) - 0.055
+
+
+def decode(x):  # gamma-encoded -> linear sRGB
+    return x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4
+
+
+def resolve(spec, tokens):
+    """Return linear sRGB for "token" or "token/NN@base"; None if a token is missing."""
+    m = re.fullmatch(r"([\w-]+)/(\d+)@([\w-]+)", spec)
+    if not m:
+        return tokens.get(spec)
+    top, pct, base = m.group(1), int(m.group(2)) / 100, m.group(3)
+    if top not in tokens or base not in tokens:
+        return None
+    return [
+        decode(encode(t) * pct + encode(b) * (1 - pct))
+        for t, b in zip(tokens[top], tokens[base])
+    ]
+
+
 def ratio(fg, bg):
     hi, lo = sorted((luminance(fg), luminance(bg)), reverse=True)
     return (hi + 0.05) / (lo + 0.05)
@@ -59,11 +87,12 @@ tokens = {
 
 failed = 0
 for fg, bg, need, where in PAIRS:
-    if fg not in tokens or bg not in tokens:
-        print(f"FAIL  missing token --{fg} or --{bg} in .dark")
+    fg_rgb, bg_rgb = resolve(fg, tokens), resolve(bg, tokens)
+    if fg_rgb is None or bg_rgb is None:
+        print(f"FAIL  missing token in .dark for --{fg} or --{bg}")
         failed += 1
         continue
-    r = ratio(tokens[fg], tokens[bg])
+    r = ratio(fg_rgb, bg_rgb)
     ok = r >= need
     failed += not ok
     print(f"{'PASS' if ok else 'FAIL'}  {r:5.2f}:1 (need {need})  --{fg} on --{bg}  [{where}]")
